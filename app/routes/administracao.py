@@ -6,26 +6,34 @@ from app.utils import valida_perfil_usuario, converte_data, mensagem_criacao_suc
 
 api = Namespace("administracao", description="Operações relacionadas aos administradores")
 
-cadastro_administrador_entrada = api.model("UsuarioInput", {
+cadastro_administrador_entrada = api.model("AdministradorInput", {
     "nome": fields.String(required=True),
     "email": fields.String(required=True),
     "senha": fields.String(required=True),
     "cpf": fields.String(required=False),
     "data_nascimento": fields.String(required=False, example="DD/MM/YYYY"),
     "endereco": fields.String(required=True),
-    "telefone": fields.String(required=True)
+    "telefone": fields.String(required=True, example="11 9XXXX-XXXX")
 })
 
-cadastro_administrador_saida = api.model("UsuarioOutput", {
+cadastro_administrador_saida = api.model("AdministradorOutput", {
     "id": fields.Integer,
     "nome": fields.String,
     "email": fields.String,
     "perfil": fields.String
 })
 
+atualizacao_administrador_entrada = api.model("AdminAtulizacao", {
+    "nome": fields.String,
+    "email": fields.String,
+    "endereco": fields.String,
+    "telefone": fields.String
+})
+
 @api.route("/cadastro/administrador")
 class AdministradorCadastro(Resource):
     @jwt_required()
+    @api.expect(cadastro_administrador_entrada)
     @api.response(201, "Novo administrador cadastrado.", cadastro_administrador_saida)
     @api.response(400, "Administrador já existente.")
     @api.response(401, "Apenas administradores podem acessar esta funcionalidade.")
@@ -65,8 +73,12 @@ class AdministradorCadastro(Resource):
             db.session.add(administrador)
             db.session.commit()
         
-        return mensagem_criacao_sucesso("Administrador", usuario)
-    
+        return {
+            "id": usuario.id,
+            "nome": usuario.nome,
+            "email": usuario.email,
+            "perfil": usuario.perfil.value
+        }  
     
 @api.route("/lista_administradores")
 class AdministradoresList(Resource):
@@ -131,6 +143,8 @@ class AdministradorResource(Resource):
 
         return resposta, 200
 
+    @api.expect(atualizacao_administrador_entrada)
+    @jwt_required()
     def put(self, id):
         """Atualiza informações de um administrador"""
 
@@ -151,6 +165,8 @@ class AdministradorResource(Resource):
             if "email" in payload:
                 if Usuario.query.filter(Usuario.email == payload["email"], Usuario.id != administrador.id).first():
                     return {"message": "E-mail já cadastrado."}, 400
+                else:
+                    administrador.usuario.email = payload["email"]
             
             if "endereco" in payload:
                 administrador.endereco = payload["endereco"]

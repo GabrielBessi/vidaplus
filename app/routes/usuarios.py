@@ -30,13 +30,27 @@ usuario_output_default = api.model("UsuarioOutput", {
     "id": fields.Integer,
     "nome": fields.String,
     "email": fields.String,
-    "perfil": fields.String
+    "perfil": fields.String,
+    "cpf": fields.String,
+    "data_nascimento": fields.String,
+    "endereco": fields.String,
+    "telefone": fields.String
+})
+
+usuario_output_profissional = api.model("ProfissionalOutput", {
+    "id": fields.Integer,
+    "nome": fields.String,
+    "email": fields.String,
+    "perfil": fields.String,
+    "conselho": fields.String,
+    "numero_conselho": fields.String,
+    "especialidade": fields.String
 })
 
 @api.route('/cadastro/profissional')
 class UsuarioCreateProfissional(Resource):
     @api.expect(usuario_input_profissional)
-    @api.marshal_with(usuario_output_default, code=201)
+    @api.marshal_with(usuario_output_profissional, code=201)
 
     def post(self):
         data = api.payload
@@ -69,20 +83,31 @@ class UsuarioCreateProfissional(Resource):
             detalhes= f"Funcionario criado: {usuario.id}"
         )        
 
-        return mensagem_criacao_sucesso("Profissional", usuario)
+        return {
+            "id": usuario.id,
+            "nome": usuario.nome,
+            "email": usuario.email,
+            "perfil": usuario.perfil.value,
+            "conselho": profissional.conselho,
+            "numero_conselho": profissional.numero_conselho,
+            "especialidade": profissional.especialidade
+        }, 201  
 
 
 @api.route('/cadastro')
 class UsuarioCreate(Resource):
     @api.expect(usuario_input_default)
+    @api.response(500, "Erro servidor")
     @api.marshal_with(usuario_output_default, code=201)
 
     def post(self):
         data = api.payload
-        perfil_usuario = data["perfil"]
 
         if Usuario.query.filter_by(email=data["email"]).first():
             api.abort(400, "E-mail já cadastrado.")
+
+        if Paciente.query.filter_by(cpf=data["cpf"]).first():
+            api.abort(400, "CPF Já cadastrado.")
 
         usuario = Usuario(
             nome=data["nome"],
@@ -111,5 +136,14 @@ class UsuarioCreate(Resource):
             detalhes= f"Paciente criado: {usuario.id}"
         )
 
-        return mensagem_criacao_sucesso(perfil_usuario, usuario)
+        return {
+            "id": usuario.id,
+            "nome": usuario.nome,
+            "email": usuario.email,
+            "perfil": usuario.perfil.value,
+            "cpf": paciente.cpf,
+            "data_nascimento": paciente.data_nascimento,
+            "endereco": paciente.endereco,
+            "telefone": paciente.telefone
+        }, 201  
 

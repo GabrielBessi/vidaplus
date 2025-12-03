@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
 #Adicionar auditoria em mais lugares - ok
 
-# Apagar tudo do banco e criar tudo de novo
+# Apagar tudo do banco e criar tudo de novo - ok
 
 # Testar 
 #     prontuario
@@ -26,3 +26,12 @@ if __name__ == "__main__":
 #criar documentação da API
 
 # montar documento final
+
+# Login - ok
+# administracao -ok
+# usuarios -ok
+# paciente ok
+# consulta - ok
+# prontuario 
+# Profissionais
+# Telemedicina

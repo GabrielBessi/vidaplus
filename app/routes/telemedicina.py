@@ -11,8 +11,6 @@ api = Namespace("telemedicina", description="Serviços relacionados à telemedic
 @api.route("/iniciar/<int:consulta_id>")
 class TelemedicinaService(Resource):
     @jwt_required()
-    @api.response(401, "Apenas profissionais podem iniciar a teleconsulta.")
-    @api.response(403, "Apenas profissionais podem iniciar a teleconsulta.")
     @api.response(500, "Erro no servidor.")
 
     def post(self, consulta_id):
@@ -21,22 +19,22 @@ class TelemedicinaService(Resource):
         validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "profissional")
 
         if validacao_usuario:
-            return 401
+            return {"message": "Apenas profissionais podem iniciar a sessão"}, 401
         
         else:
             id_usuario = identificacao["id"]
             usuario = Usuario.query.get(id_usuario)
 
             if not usuario.profissional:
-                return 403
+                return {"message": "Não tem permissão para iniciar esta sessão"}, 403
             
             consulta = Consulta.query.get_or_404(consulta_id)
             
             if consulta.profissional_id != usuario.profissional.id:
-                return 403
-            
+                return {"message": "Não tem permissão para iniciar esta sessão"}, 403
+
             if consulta.telemedicina:
-                return {"erro": "Sessão já criada", "sessao": consulta.telemed_sessao.url_sala}, 400
+                return {"erro": "Sessão já criada", "sessao": consulta.telemedicina[0].url_sala}, 400
             
         import uuid
         codigo_sala = str(uuid.uuid4())
@@ -53,7 +51,7 @@ class TelemedicinaService(Resource):
 
         return {"mensagem": "Sessão iniciada",
                 "url_sala": url,
-                "codigo_sala": codigo_sala }
+                "codigo_sala": codigo_sala}
     
 @api.route("/entrar/<int:consulta_id>")
 class TelemedicinaPacienteService(Resource):
@@ -73,13 +71,13 @@ class TelemedicinaPacienteService(Resource):
         else:
             usuario_id = identificacao["id"]
             consulta = Consulta.query.get_or_404(consulta_id)
-            sessao = consulta.telemedicina
+            sessao = consulta.telemedicina[0]
 
             if not sessao or not sessao.ativa:
-                return 400
+                return {"message": "Já existe uma sessão ativa"}, 400
             
-            if consulta.paciente.usuario_id != usuario_id and consulta.profissional.usuario.id != usuario_id:
-                return 403
+            if consulta.paciente.id != usuario_id and consulta.profissional.usuario.id != usuario_id:
+                return {"message": "Não tem permissão para essa sessão"}, 403
             
             return {"url_sala": sessao.url_sala,
                     "consulta_id": consulta_id}, 200
@@ -100,14 +98,17 @@ class TelemedicinaProfissionalService(Resource):
         
         else:
             consulta = Consulta.query.get_or_404(consulta_id)
-            sessao = consulta.telemedicina
+            sessao = consulta.telemedicina[0]
 
             if not sessao:
-                return 404
+                return {"message": "Sessão não encontrada."}, 404
             
             sessao.ativa = False
             sessao.encerrada_em = datetime.now()
 
             db.session.commit()
 
-            return 200
+            return {
+                "ativa": sessao.ativa,
+                "encerrada_em": sessao.encerrada_em.isoformat()
+            }, 200

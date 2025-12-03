@@ -26,10 +26,6 @@ prontuario_output = api.model("ProntuarioOut", {
 class ProntuariosCreate(Resource):
     @jwt_required()
     @api.expect(prontuario_input, validate=True)
-    @api.response(201, "Prontuário criado com sucesso", prontuario_output)
-    @api.response(404, "Consulta não encontrada", prontuario_output)
-    @api.response(401, "Você não tem permissão para criar um prontuário para esta consulta.")
-    @api.response(400, "Esta consulta já possui prontuário")
     @api.response(500, "Erro interno do servidor.")	
 
     def post(self):
@@ -38,7 +34,7 @@ class ProntuariosCreate(Resource):
         validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "profissional")
 
         if validacao_usuario:
-            return validacao_usuario
+            return {"messagem": "Apenas profissionais podem acessar esta funcionalidade."}, 401
         
         else:
             data = request.json
@@ -50,13 +46,13 @@ class ProntuariosCreate(Resource):
             consulta = Consulta.query.get(consulta_id)
 
             if not consulta:
-                return 404
+                return {"messagem": "Prontuário não encontrado"}, 404
             
             if consulta.profissional_id != id_profissional:
-                return 401
+                return {"messagem": "Este prontuário não é do seu paciente."}, 401
             
             if consulta.prontuario:
-                return 400
+                return {"messagem": "Já existe um prntuário para este paciente."}, 400
             
             prontuario = Prontuario(
                 consulta_id=consulta_id,
@@ -74,7 +70,11 @@ class ProntuariosCreate(Resource):
                 detalhes= f"Prontuário criado para consulta {prontuario.consulta_id}"
             )
 
-            return 201
+            return {
+                "consulta_id": prontuario.consulta_id,
+                "anotacoes": prontuario.anotacoes,
+                "prescricao": prontuario.prescricao
+            }, 201
         
 @api.route("/<int:id>")
 class ProntuarioResource(Resource):
@@ -82,7 +82,6 @@ class ProntuarioResource(Resource):
     @api.response(401, "Você não tem permissão visualizar este prontuário.")
     @api.response(404, "Prontuário não encontrado.")
     @api.response(403, "Você não tem permissão para acessar este prontuário.")
-    @api.response(204, "Esta consulta não possui prontuário.")
 
     def get(self, id):
         identificacao = get_jwt()
@@ -102,17 +101,19 @@ class ProntuarioResource(Resource):
                 return 403
             
             if not consulta.prontuario:
-                return 204
+                return {"message": "Esta consulta não possui prontuário."}, 200
 
-            pront = consulta.prontuario
+            resultado = []
 
-            return {
-                "id": pront.id,
-                "consulta_id": pront.consulta_id,
-                "anotacoes": pront.anotacoes,
-                "prescricao": pront.prescricao,
-                "data_registro": pront.data_registro.strftime("%Y-%m-%d %H:%M:%S")
-            }, 200
+            for p in consulta.prontuario:
+                resultado.append({
+                    "consulta_id": p.consulta_id,
+                    "anotacoes": p.anotacoes,
+                    "prescricao": p.prescricao,
+                    "data_registro": p.data_registro.strftime("%Y-%m-%d %H:%M:%S")
+            })
+
+            return resultado, 200
         
 @api.route("/paciente/<int:consulta_id>")
 class ProntuarioPacienteResource(Resource):
@@ -128,26 +129,28 @@ class ProntuarioPacienteResource(Resource):
         validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "paciente")
 
         if validacao_usuario:
-            return 401
+            return {"message": "Apenas pacientes podem acessar esta funcionalidade."}, 401
         
         else:
             consulta = Consulta.query.get(consulta_id)
 
             if not consulta:
-                return 404
+                return {"message": "Consulta não encontrada"}, 404
             
             if consulta.paciente_id != id_paciente:
-                return 403
+                return {"message": "Sem permissão para acessar este prontuário"}, 403
             
             if not consulta.prontuario:
-                return 204
+                return {"message": "Não existe prontuário para esta consulta."}, 200
 
-            pront = consulta.prontuario
+            resultado = []
 
-            return {
-                "id": pront.id,
-                "consulta_id": pront.consulta_id,
-                "anotacoes": pront.anotacoes,
-                "prescricao": pront.prescricao,
-                "data_registro": pront.data_registro.strftime("%Y-%m-%d %H:%M:%S")
-            }, 200
+            for p in consulta.prontuario:
+                resultado.append({
+                    "consulta_id": p.consulta_id,
+                    "anotacoes": p.anotacoes,
+                    "prescricao": p.prescricao,
+                    "data_registro": p.data_registro.strftime("%Y-%m-%d %H:%M:%S")
+            })
+
+            return resultado, 200

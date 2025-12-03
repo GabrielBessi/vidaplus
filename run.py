@@ -32,6 +32,6 @@ if __name__ == "__main__":
 # usuarios -ok
 # paciente ok
 # consulta - ok
-# prontuario 
-# Profissionais
+# prontuario - ok
+# Profissionais - ok
 # Telemedicina

@@ -16,13 +16,19 @@ consulta_profissional_output = api.model("ConsultaProfissionalOut", {
     "especialidade": fields.String
 })
 
+atualiza_profissional_input = api.model("AtualizaProfissional", {
+    "conselho": fields.String,
+    "numero_conselho": fields.String,
+    "especialidade": fields.String
+})
+
 @api.route("/")
 class ProfissionalResource(Resource):
+    @jwt_required()
     @api.response(200, "Profissional retornado com sucesso", consulta_profissional_output)
     @api.response(401, "Você não tem permissão para este acesso.")
     @api.response(404, "Não foi possível encontrar o profissional de saúde solicitado.")
     @api.response(500, "Erro interno do servidor.")
-    @jwt_required()
 
     def get(self):
         identificacao = get_jwt()
@@ -44,7 +50,12 @@ class ProfissionalResource(Resource):
                 "numero_conselho": profissional.numero_conselho,
                 "especialidade": profissional.especialidade
             }, 200
-        
+    
+    @jwt_required()
+    @api.expect(atualiza_profissional_input)
+    @api.response(401, "Apenas profissionais podem acessar esta funcionalidade.")
+    @api.response(404, "Não foi possível encontrar o profissional de saúde solicitado.")
+    @api.response(500, "Erro interno do servidor.")
     def put(self):
         identificacao = get_jwt()
 

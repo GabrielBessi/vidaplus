@@ -56,9 +56,6 @@ class TelemedicinaService(Resource):
 @api.route("/entrar/<int:consulta_id>")
 class TelemedicinaPacienteService(Resource):
     @jwt_required()
-    @api.response(401, "Apenas paciente autorizado pode entrar na sala.")
-    @api.response(400, "Sessão não iniciada.")
-    @api.response(403, "Você não pertence a esta consulta")
 
     def get(self, consulta_id):
         identificacao = get_jwt()
@@ -66,7 +63,7 @@ class TelemedicinaPacienteService(Resource):
         validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "paciente")
 
         if validacao_usuario:
-            return 401
+            return {"message": "Apenas paciente autorizado pode entrar na sala."}, 401
         
         else:
             usuario_id = identificacao["id"]
@@ -94,7 +91,7 @@ class TelemedicinaProfissionalService(Resource):
         validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "profissional")
 
         if validacao_usuario:
-            return 401
+            return {"message": "Apenas paciente autorizado pode entrar na sala."}, 401
         
         else:
             consulta = Consulta.query.get_or_404(consulta_id)

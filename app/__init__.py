@@ -9,14 +9,21 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
-def create_app():
+def create_app(testing=False):
     app = Flask(__name__)
+
+    # Config padrão
     app.config.from_object(Config)
-    
+
+    # Config extra somente para testes
+    if testing:
+        app.config["TESTING"] = True
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+        app.config["JWT_SECRET_KEY"] = "test-secret"
+
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-
 
     from .models import Usuario, Paciente, Profissional, Consulta, Prontuario, Telemedicina, LogAuditoria
 
@@ -31,20 +38,22 @@ def create_app():
 
     authorizations = {
         "Bearer Auth": {
-                "type": "apiKey",
-                "in": "header",
-                "name": "Authorization",
-                "description": "JWT no formato: **Bearer <token>**"
-        }}       
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization",
+            "description": "JWT no formato: **Bearer <token>**"
+        }
+    }
 
     api = Api(
-            app,
-            version="1.0", 
-            title="VidaPlus API",
-            description="API para gerenciamento de pacientes, profissionais, telemedicina e administração.",
-            doc="/docs",
-            authorizations=authorizations,
-            security="Bearer Auth")
+        app,
+        version="1.0",
+        title="VidaPlus API",
+        description="API para gerenciamento de pacientes, profissionais, telemedicina e administração.",
+        doc="/docs",
+        authorizations=authorizations,
+        security="Bearer Auth"
+    )
 
     api.add_namespace(pacientes_ns)
     api.add_namespace(profissionais_ns)

@@ -33,4 +33,4 @@ class Login(Resource):
         token = create_access_token(identity=str(usuario.id),
                                     additional_claims={"id": usuario.id, "perfil": usuario.perfil.value})
 
-        return {"access_token": token}, 200
+        return {"access_token": f"Bearer {token}"}, 200

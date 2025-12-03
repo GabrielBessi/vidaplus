@@ -15,6 +15,7 @@ class StatusEnum(enum.Enum):
 
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(150), nullable=False)
@@ -24,6 +25,7 @@ class Usuario(db.Model):
 
 class Administrador(db.Model):
     __tablename__ = 'administradores'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), primary_key=True)
     cpf = db.Column(db.String(14), unique=True, nullable=False)
@@ -36,6 +38,7 @@ class Administrador(db.Model):
 
 class Paciente(db.Model):
     __tablename__ = 'pacientes'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), primary_key=True)
     cpf = db.Column(db.String(14), unique=True, nullable=False)
@@ -47,6 +50,7 @@ class Paciente(db.Model):
 
 class Profissional(db.Model):
     __tablename__ = 'profissionais'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), primary_key=True)
     conselho = db.Column(db.String(50), nullable=False)
@@ -57,6 +61,7 @@ class Profissional(db.Model):
 
 class Consulta(db.Model):
     __tablename__ = 'consultas'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     paciente_id = db.Column(db.Integer, db.ForeignKey("pacientes.id"), nullable=False)
@@ -71,6 +76,7 @@ class Consulta(db.Model):
 
 class Prontuario(db.Model):
     __tablename__ = 'prontuarios'
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     consulta_id = db.Column(db.Integer, db.ForeignKey("consultas.id"), nullable=False)
@@ -82,6 +88,7 @@ class Prontuario(db.Model):
 
 class Telemedicina(db.Model):
     __tablename__ = "telemedicinas"
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     consulta_id = db.Column(db.Integer, db.ForeignKey("consultas.id"), nullable=False)
@@ -98,6 +105,7 @@ class Telemedicina(db.Model):
 
 class LogAuditoria(db.Model):
     __tablename__ = "logs_auditoria"
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, autoincrement=True, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)

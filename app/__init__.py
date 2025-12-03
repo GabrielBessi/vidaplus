@@ -25,7 +25,7 @@ def create_app(testing=False):
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    from .models import Usuario, Paciente, Profissional, Consulta, Prontuario, Telemedicina, LogAuditoria
+    from . import models
 
     from .routes.pacientes import api as pacientes_ns
     from .routes.profissionais import api as profissionais_ns

@@ -10,7 +10,7 @@ def valida_perfil_usuario (identificacao, identificacao_perfil, tipo_perfil):
    match tipo_perfil:
       case "paciente":
          if not identificacao or identificacao_perfil != tipo_perfil:
-            return {"message": "Apenas pacientes podem agendar consultas."}, 401
+            return {"message": "Apenas pacientes podem acessar esta funcionalidade."}, 401
       case "administrador":
          if not identificacao or identificacao_perfil != tipo_perfil:
             return {"message": "Apenas administradores podem acessar esta funcionalidade."}, 401

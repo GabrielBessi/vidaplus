@@ -4,7 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from app import db
 from app.models import Consulta, Profissional
 from app.utils import valida_perfil_usuario, valida_data_hora
-from audit import registrar_auditoria
+from app.audit import registrar_auditoria
 
 api = Namespace("consultas", description="Operações relacionadas a consultas médicas")
 
@@ -32,114 +32,101 @@ consulta_update_model = api.model("ConsultaUpdate", {
 })
 
 @api.route("/")
-class ConsultaCreate(Resource):
-    @api.expect(consulta_input, validate=True)
-    @api.response(201, "Consulta criada com sucesso", consulta_output)
-    @api.response(400, "Dados inválidos")
-    @api.response(401, "Não autorizado")
-    @api.response(404, "Profissional não encontrado")
+class ConsultaCollection(Resource):
     @jwt_required()
-
     @api.marshal_list_with(consulta_output)
-
-    def post(self):
-
-        identificacao = get_jwt()
-
-        valida_perfil_usuario(identificacao, identificacao.get("perfil"), "paciente")
-    
-        payload = request.json
-        profissional_id = payload["profissional_id"]
-        data = payload["data"]
-        hora = payload["hora"]
-        tipo = payload["tipo"]
-
-        if not profissional_id or not data or not hora or not tipo:
-            return {"message": "Os campos profissional_id, data_hora e tipo são obrigatórios."}, 400
-        
-        valida_data_hora(data)
-        
-        profissional = Profissional.query.get(profissional_id)
-        if not profissional:
-            return {"message": "Profissional não encontrado."}, 404
-        
-        paciente_id = identificacao["id"]
-
-        nova_consulta = Consulta(
-            paciente_id=paciente_id,
-            profissional_id=profissional_id,
-            data=data,
-            hora=hora,
-            tipo=tipo,
-            status="agendada"
-        )
-
-        db.session.add(nova_consulta)   
-        db.session.commit()
-
-        registrar_auditoria (
-            usuario_id=paciente_id,
-            acao = "NOVA_CONSULTA",
-            detalhes= f"Consulta criada para o paciente: {paciente_id}"
-        )
-
-        return nova_consulta, 201
-        
-@api.route("/")
-class ConsultaResource(Resource):
-    @jwt_required()    
-    @api.marshal_list_with(consulta_output)
-
     def get(self):
         identificacao = get_jwt()
+        validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "paciente")
 
-        valida_perfil_usuario(identificacao, identificacao.get("perfil"), "paciente")
-        id_paciente = identificacao["id"]
-        consulta_paciente = Consulta.query.filter_by(paciente_id=id_paciente)
-        resposta = []
+        if validacao_usuario:
+            return validacao_usuario
+        
+        else:
+            id_paciente = identificacao["id"]
+            consultas = Consulta.query.filter_by(paciente_id=id_paciente).all()
 
-        for c in consulta_paciente:
-            resposta.append({
-                "id": c.id,
-                "paciente_id": c.paciente.id,
-                "profissional_id": c.profissional.id,
-                "data": c.data,
-                "hora": c.hora,
-                "status": c.status,
-                "tipo": c.tipo
-            })
+            return consultas, 200
 
-        return resposta, 200
 
-    @api.expect(consulta_update_model, validate=True)
-    def put(self):
+    @jwt_required()
+    @api.expect(consulta_input, validate=True)
+    @api.marshal_with(consulta_output)
+    def post(self):
         identificacao = get_jwt()
-        id_paciente = identificacao["id"]
+        validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "paciente")
 
-        valida_perfil_usuario(identificacao, identificacao.get("perfil"), "paciente")
+        if validacao_usuario:
+            return validacao_usuario
+        
+        else:
+            payload = request.json
+            profissional_id = payload["profissional_id"]
+            data = payload["data"]
+            hora = payload["hora"]
+            tipo = payload["tipo"]
+
+            valida_data_hora(data)
+
+            profissional = Profissional.query.get(profissional_id)
+            if not profissional:
+                api.abort(404, "Profissional não encontrado.")
+
+            nova_consulta = Consulta(
+                paciente_id=identificacao["id"],
+                profissional_id=profissional_id,
+                data=data,
+                hora=hora,
+                tipo=tipo,
+                status="agendada"
+            )
+
+            db.session.add(nova_consulta)
+            db.session.commit()
+
+            registrar_auditoria(
+                usuario_id=identificacao["id"],
+                acao="NOVA_CONSULTA",
+                detalhes=f"Consulta criada para o paciente {identificacao['id']}"
+            )
+
+            return nova_consulta, 201
 
 
-        consulta = Consulta.query.get_or_404(id_paciente)
-        payload = request.json
+@api.route("/<int:id_consulta>")
+class ConsultaUpdate(Resource):
+    @jwt_required()
+    @api.expect(consulta_update_model)
+    @api.marshal_with(consulta_output)
 
-        if "data" in payload:
-            consulta.data = payload["data"]
+    def put(self, id_consulta):
+        identificacao = get_jwt()
+        validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "paciente")
 
-        if "hora" in payload:
-            consulta.hora = payload["hora"]
+        if validacao_usuario:
+            return validacao_usuario
+        
+        else:
+            consulta = Consulta.query.get_or_404(id_consulta)
 
-        if "tipo" in payload:
-            consulta.tipo = payload["tipo"]
+            payload = request.json
 
-        db.session.commit()
+            if "data" in payload:
+                consulta.data = payload["data"]
 
-        registrar_auditoria (
-            usuario_id=id_paciente,
-            acao = "ATUALIZAR_CONSULTA",
-            detalhes= f"Consulta atualizada para o paciente: {id_paciente}"
-        )        
+            if "hora" in payload:
+                consulta.hora = payload["hora"]
 
-        return {"message": f"Paciente {id_paciente} atualizado"}, 200
+            if "tipo" in payload:
+                consulta.tipo = payload["tipo"]
 
+            db.session.commit()
 
+            registrar_auditoria(
+                usuario_id=identificacao["id"],
+                acao="ATUALIZAR_CONSULTA",
+                detalhes=f"Consulta {id_consulta} atualizada"
+            )
+
+            return consulta, 200
 

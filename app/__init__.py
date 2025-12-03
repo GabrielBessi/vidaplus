@@ -18,7 +18,7 @@ def create_app():
     jwt.init_app(app)
 
 
-    from .models import Usuario, Paciente, Profissional, Consulta, Prontuario, LogAuditoria
+    from .models import Usuario, Paciente, Profissional, Consulta, Prontuario, Telemedicina, LogAuditoria
 
     from .routes.pacientes import api as pacientes_ns
     from .routes.profissionais import api as profissionais_ns

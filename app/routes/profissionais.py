@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 from app.models import Profissional
 from app import db
 from app.utils import valida_perfil_usuario
-from audit import registrar_auditoria
+from app.audit import registrar_auditoria
 
 api = Namespace("profissionais", description="Operações relacionadas aos profissionais de saúde")
 

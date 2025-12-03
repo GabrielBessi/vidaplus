@@ -5,7 +5,7 @@ from app import db
 from app.models import Consulta, Prontuario
 from app.utils import valida_perfil_usuario
 from datetime import datetime
-from audit import registrar_auditoria
+from app.audit import registrar_auditoria
 
 api = Namespace("prontuarios", description="Operações relacionadas a prontuários médicos")
 

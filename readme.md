@@ -3,6 +3,8 @@
 API para gerenciamento de pacientes, profissionais, telemedicina e administração de uma clínica médica.
 
 link de acesso: https://vidaplus.onrender.com/docs
+    
+Observação: Ao acessar o link, se a interface do swagger não aparecer, fique tranquilo, a aplicação está sendo carregada no servidor do render. 
 
 ---
 

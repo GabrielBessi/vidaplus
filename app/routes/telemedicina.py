@@ -91,7 +91,7 @@ class TelemedicinaProfissionalService(Resource):
         validacao_usuario = valida_perfil_usuario(identificacao, identificacao.get("perfil"), "profissional")
 
         if validacao_usuario:
-            return {"message": "Apenas paciente autorizado pode entrar na sala."}, 401
+            return {"message": "Você não tem permissão para essa requisição."}, 401
         
         else:
             consulta = Consulta.query.get_or_404(consulta_id)

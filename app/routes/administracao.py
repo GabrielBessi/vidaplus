@@ -52,6 +52,9 @@ class AdministradorCadastro(Resource):
             if Usuario.query.filter_by(email=payload["email"]).first():
                 api.abort(400, "E-mail já cadastrado.")
 
+            if Administrador.query.filter_by(cpf=payload["cpf"]).first():
+                api.abort(400, "CPF já cadastrado.")
+
             usuario = Usuario(
                 nome=payload["nome"],
                 email=payload["email"],
